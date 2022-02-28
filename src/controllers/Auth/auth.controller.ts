@@ -22,13 +22,13 @@ class AuthController {
         }
       
         //Hash the password, to securely store on DB
-        user.hashPassword();
+        // user.hashPassword();
       
         //Try to save. If fails, the username is already in use
         const userRepository = getRepository(User);
         try {
           const userData = await userRepository.save(user);
-          const token = AuthService.getJwtToken(userData)
+          const token = await AuthService.getJwtToken(userData)
 
           //Send the jwt in the response
           res.send({
@@ -48,7 +48,6 @@ class AuthController {
 
   static login = async (req: Request, res: Response) => {
     //Check if username and password are set
-    console.log(req.body.user,"uuuuuuuuuuuuuuuuuu")
     let { email, password } = req.body.user;
     if (!(email && password)) {
       res.status(400).send();
@@ -60,17 +59,19 @@ class AuthController {
     try {
       user = await userRepository.findOneOrFail({ where: { email } });
 
-        //Check if encrypted password match
-    //   if (!user.checkIfUnencryptedPasswordIsValid(password)) {
-    //     res.status(401).send();
-    //     return;
-    //   }
+     //Check if encrypted password match
+      if (!user.checkIfUnencryptedPasswordIsValid(password)) {
+        res.status(401).send({
+            message:"Invalid password",
+        });
+        return;
+      }
       
-      const token = AuthService.getJwtToken(user)
+      const token = await AuthService.getJwtToken(user)
     
-                //Send the jwt in the response
+        //Send the jwt in the response
         res.send({
-            message:"User Successfully registered",
+            message:"User Successfully logged In",
             token:token
         });
 
