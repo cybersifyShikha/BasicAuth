@@ -1,0 +1,36 @@
+\l
+drop database strapi
+;
+create database auth;
+\d
+\c auth
+\d
+\l
+\d
+select * from users;
+\d users
+\d users;
+delete users;
+drop database auth;
+\t
+
+\c postgres
+drop database auth;
+create database auth;
+\c auth
+\d
+select * from users;
+\d users;
+\d users;
+drop database auth
+;
+\c postgres
+drop database auth
+;
+create database auth;
+\c auth
+\d
+\d
+\d
+\d users;
+\s users;
