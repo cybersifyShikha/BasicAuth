@@ -1,17 +1,18 @@
 import express, {Request, Response} from 'express';
-// import { PostController } from './controller/post.controller'; // import the post controller
-import { createConnection } from "typeorm";
+import "reflect-metadata";
+import { ApolloServer, Config, ExpressContext } from "apollo-server-express";
 
-import routes from './routes'
+import * as TypeORM from "typeorm";
+import { createConnection } from 'typeorm';
+import { Container } from 'typedi';
+import createSchema from "./schema";
 
 class Server {
-  // private postController: PostController;
   private app: express.Application;
 
   constructor(){
     this.app = express(); // init the application
-    this.configuration();
-    this.routes();
+    // this.configuration();
   }
 
   /**
@@ -19,15 +20,18 @@ class Server {
    * If we didn't configure the port into the environment 
    * variables it takes the default port 3000
    */
-  public configuration() {
-    this.app.set('port', process.env.PORT || 3000);
-    this.app.use(express.json());
-  }
+  // public configuration() {
+  //   this.app.set('port', process.env.PORT || 3000);
+  //   // this.app.use(express.json());
+  // }
 
   /**
-   * Method to configure the routes
+   * Used to start the server
    */
-  public async routes(){
+  public async start(){
+    TypeORM.useContainer(Container);
+    const schema = await createSchema(Container);
+
     await createConnection({
       type: "postgres",
       host: "localhost",
@@ -35,36 +39,32 @@ class Server {
       username: "postgres",
       password: "root",
       database: "auth",
-      entities: ["src/database/entities/*.ts"],
-      migrations:["src/database/migrations/*.ts"],
+      entities: ["build/database/entities/*.js"],
+      migrations:["build/database/migrations/*.js"],
       cli: { 
-        entitiesDir: "src/database/entities", 
-        migrationsDir: "src/database/migrations", 
-        subscribersDir: "src/subscriber" 
+        entitiesDir: "build/database/entities", 
+        migrationsDir: "build/database/migrations", 
+        subscribersDir: "build/subscriber" 
       },
       synchronize: true,
     });
 
-    // this.postController = new PostController();
+    const server = new ApolloServer({
+      schema,
+      context: ({ req, res }) => ({ req, res }),
+      debug: true,
+      playground: true,
+    } as Config<ExpressContext>);
 
-    this.app.get( "/", (req: Request, res: Response ) => {
-      res.send( "Hello I m running" );
-    });
-
-    this.app.use(routes)
-
-    // this.app.use(`/api/posts/`,this.postController.router); // Configure the new routes of the controller post
-  }
-
-  /**
-   * Used to start the server
-   */
-  public start(){
-    this.app.listen(this.app.get('port'), () => {
-      console.log(`Server is listening ${this.app.get('port')} port.`);
+    const app = this.app
+    await server.start()
+    server.applyMiddleware({app});
+    
+    app.listen(3000, () => {
+      console.log(`Server is listening 3000 port.`);
     });
   }
 }
 
 const server = new Server(); // Create server instance
-server.start(); //
+server.start(); 

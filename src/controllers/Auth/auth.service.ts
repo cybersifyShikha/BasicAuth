@@ -1,8 +1,11 @@
 import * as jwt from "jsonwebtoken";
+import { Service } from "typedi";
 import config from "../../config/JwtSecret";
+import { User } from "../../database/entities/user.entity";
 
+@Service()
 class AuthService {
-    static getJwtToken = async(user: { id: any; email: any; })=>{
+    async getJwtToken(user: User){
         const { id,email } = user
         const token = jwt.sign(
                     { userId: id, username: email },
